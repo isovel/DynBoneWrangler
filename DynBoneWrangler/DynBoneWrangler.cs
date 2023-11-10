@@ -54,7 +54,7 @@ namespace DynBoneWrangler
 
             private static void CheckShouldUpdate(Worker worker)
             {
-                float localUserFPS = worker.LocalUser.FPS;
+                float localUserFPS = worker.Engine.SystemInfo.ImmediateFPS;
                 
                 if (_shouldUpdate)
                 {
