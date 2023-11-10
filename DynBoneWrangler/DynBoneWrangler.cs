@@ -8,7 +8,7 @@ namespace DynBoneWrangler
     {
         public override string Name => "DynBoneWrangler";
         public override string Author => "isotach";
-        public override string Version => "1.0.0";
+        public override string Version => "1.0.1";
         public override string Link => "https://github.com/isovel/DynBoneWrangler";
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> enabled =
