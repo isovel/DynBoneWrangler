@@ -15,6 +15,10 @@ namespace DynBoneWrangler
             new ModConfigurationKey<bool>("enabled",
                 "Should the mod be enabled", () => true);
 
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> halfRateUpdates =
+            new ModConfigurationKey<bool>("halfRateUpdates",
+                "Reduce DynamicBoneChain updates", () => true);
+
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<float> disableThreshold =
             new ModConfigurationKey<float>("disableThreshold",
                 "Disable DynamicBoneChain updates when your FPS is below this value", () => 17.0f);
@@ -38,12 +42,17 @@ namespace DynBoneWrangler
         class DynamicBoneChainManager_Patch
         {
             private static bool _shouldUpdate = true;
+
+            private static bool _throttleVar = false;
             
-            [HarmonyPrefix]
             [HarmonyPatch("Update")]
             static bool Prefix(Worker __instance)
             {
                 if (!Config.GetValue(enabled)) return true;
+
+                _throttleVar = !_throttleVar;
+
+                if (Config.GetValue(halfRateUpdates) && _throttleVar) return false;
                 
                 CheckShouldUpdate(__instance);
 
