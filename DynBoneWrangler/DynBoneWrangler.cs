@@ -50,9 +50,12 @@ namespace DynBoneWrangler
             {
                 if (!Config.GetValue(enabled)) return true;
 
-                _throttleVar = !_throttleVar;
+                if (Config.GetValue(halfRateUpdates) && _throttleVar == true)
+                {
+                    _throttleVar = false;
 
-                if (Config.GetValue(halfRateUpdates) && _throttleVar) return false;
+                    return false;
+                }
                 
                 CheckShouldUpdate(__instance);
 
@@ -72,6 +75,8 @@ namespace DynBoneWrangler
                 else
                 {
                     if (localUserFPS > Config.GetValue(enableThreshold)) _shouldUpdate = true;
+                    
+                    if (Config.GetValue(halfRateUpdates) == true) _throttleVar = true;
                 }
             }
         }
