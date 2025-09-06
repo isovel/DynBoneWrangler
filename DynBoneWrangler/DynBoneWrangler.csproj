@@ -1,68 +1,80 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
-            Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
-    <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <ProjectGuid>{9498D0F6-0C45-440D-8FFF-D0993D59844A}</ProjectGuid>
-        <OutputType>Library</OutputType>
-        <AppDesignerFolder>Properties</AppDesignerFolder>
-        <RootNamespace>DynBoneWrangler</RootNamespace>
-        <AssemblyName>DynBoneWrangler</AssemblyName>
-        <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-        <FileAlignment>512</FileAlignment>
-        <LangVersion>10</LangVersion>
-        <BuildProjectReferences>false</BuildProjectReferences>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-        <PlatformTarget>AnyCPU</PlatformTarget>
-        <DebugSymbols>true</DebugSymbols>
-        <DebugType>full</DebugType>
-        <Optimize>false</Optimize>
-        <OutputPath>bin\Debug\</OutputPath>
-        <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-        <PlatformTarget>AnyCPU</PlatformTarget>
-        <DebugType>none</DebugType>
-        <Optimize>true</Optimize>
-        <OutputPath>bin\Release\</OutputPath>
-        <DefineConstants>TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-    <ItemGroup>
-        <Reference Include="0Harmony">
-          <HintPath>S:\SteamLibrary\steamapps\common\Resonite\rml_libs\0Harmony.dll</HintPath>
-        </Reference>
-        <Reference Include="Elements.Core">
-          <HintPath>S:\SteamLibrary\steamapps\common\Resonite\Resonite_Data\Managed\Elements.Core.dll</HintPath>
-        </Reference>
-        <Reference Include="FrooxEngine">
-          <HintPath>S:\SteamLibrary\steamapps\common\Resonite\Resonite_Data\Managed\FrooxEngine.dll</HintPath>
-        </Reference>
-        <Reference Include="ResoniteModLoader">
-          <HintPath>S:\SteamLibrary\steamapps\common\Resonite\Libraries\ResoniteModLoader.dll</HintPath>
-        </Reference>
-        <Reference Include="System"/>
-        <Reference Include="System.Core"/>
-        <Reference Include="System.Data"/>
-        <Reference Include="System.Xml"/>
-    </ItemGroup>
-    <ItemGroup>
-        <Compile Include="DynBoneWrangler.cs" />
-        <Compile Include="Properties\AssemblyInfo.cs"/>
-    </ItemGroup>
-    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+<Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Build settings -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
 
-    <Target Name="ClearReferenceCopyLocalPaths" AfterTargets="ResolveAssemblyReferences">
-        <ItemGroup>
-            <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" />
-        </ItemGroup>
-    </Target>
+    <!-- Keep existing Properties/AssemblyInfo.cs -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+    <!-- Lean mod DLL -->
+    <Optimize>true</Optimize>
+    <Deterministic>true</Deterministic>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <!-- Defaults (override with -p:ResonitePath= and -p:ManagedDir= on the CLI) -->
+  <PropertyGroup>
+    <ResonitePath Condition="'$(ResonitePath)' == ''">
+      C:\Program Files (x86)\Steam\steamapps\common\Resonite
+    </ResonitePath>
+    <ManagedDir Condition="'$(ManagedDir)' == ''">
+      $(ResonitePath)\Renderer\Renderite.Renderer_Data\Managed
+    </ManagedDir>
+  </PropertyGroup>
+
+  <!-- Game/engine references -->
+  <ItemGroup>
+    <Reference Include="FrooxEngine">
+      <HintPath>$(ResonitePath)\FrooxEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Elements.Core">
+      <HintPath>$(ResonitePath)\Elements.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ResoniteModLoader">
+      <HintPath>$(ResonitePath)\Libraries\ResoniteModLoader.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Harmony from the game install (prefer rml_libs, else Libraries).
+         Each Reference is INCLUDED ONLY IF the file actually exists. -->
+    <Reference Include="0Harmony"
+               Condition="Exists('$(ResonitePath)\rml_libs\0Harmony.dll')">
+      <HintPath>$(ResonitePath)\rml_libs\0Harmony.dll</HintPath>
+      <Private>false</Private>
+      <SpecificVersion>false</SpecificVersion>
+    </Reference>
+    <Reference Include="0Harmony"
+               Condition="!Exists('$(ResonitePath)\rml_libs\0Harmony.dll') and Exists('$(ResonitePath)\Libraries\0Harmony.dll')">
+      <HintPath>$(ResonitePath)\Libraries\0Harmony.dll</HintPath>
+      <Private>false</Private>
+      <SpecificVersion>false</SpecificVersion>
+    </Reference>
+
+    <!-- Required after renderer split -->
+    <Reference Include="Renderite.Shared">
+      <HintPath>$(ManagedDir)\Renderite.Shared.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Fail fast with clear errors if refs are missing -->
+  <Target Name="CheckGameRefs" BeforeTargets="Build">
+    <Error Condition="!Exists('$(ResonitePath)\FrooxEngine.dll')"
+           Text="Missing reference: $(ResonitePath)\FrooxEngine.dll" />
+    <Error Condition="!Exists('$(ResonitePath)\Elements.Core.dll')"
+           Text="Missing reference: $(ResonitePath)\Elements.Core.dll" />
+    <Error Condition="!Exists('$(ResonitePath)\Libraries\ResoniteModLoader.dll')"
+           Text="Missing reference: $(ResonitePath)\Libraries\ResoniteModLoader.dll" />
+    <Error Condition="!Exists('$(ManagedDir)\Renderite.Shared.dll')"
+           Text="Missing reference: $(ManagedDir)\Renderite.Shared.dll (check -p:ManagedDir=...)" />
+    <Error Condition="!Exists('$(ResonitePath)\rml_libs\0Harmony.dll') and !Exists('$(ResonitePath)\Libraries\0Harmony.dll')"
+           Text="Missing Harmony: expected at $(ResonitePath)\rml_libs\0Harmony.dll (or Libraries\0Harmony.dll). Check -p:ResonitePath=..." />
+  </Target>
 
 </Project>
