@@ -1,80 +1,38 @@
 <Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<TargetFramework>net9.0</TargetFramework>
+		<LangVersion>12.0</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<!-- Change CopyToMods to true if you'd like builds to be moved into the Mods folder automatically-->
+		<CopyToMods Condition="'$(CopyToMods)'==''">true</CopyToMods>
+	</PropertyGroup>
 
-  <!-- Build settings -->
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <LangVersion>preview</LangVersion>
+	<PropertyGroup Condition="'$(ResonitePath)'==''">
+		<!-- If you don't want to provide a ResonitePath in dotnet build, you can specify one here -->
+		<ResonitePath>$(MSBuildThisFileDirectory)Resonite/</ResonitePath>
+		<ResonitePath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Resonite\')">C:\Program Files (x86)\Steam\steamapps\common\Resonite\</ResonitePath>
+		<ResonitePath Condition="Exists('$(HOME)/.steam/steam/steamapps/common/Resonite/')">$(HOME)/.steam/steam/steamapps/common/Resonite/</ResonitePath>
+	</PropertyGroup>
 
-    <!-- Keep existing Properties/AssemblyInfo.cs -->
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	<ItemGroup>
+		<Reference Include="ResoniteModLoader">
+			<HintPath>$(ResonitePath)Libraries\ResoniteModLoader.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="HarmonyLib">
+			<HintPath>$(ResonitePath)rml_libs\0Harmony.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="FrooxEngine">
+			<HintPath>$(ResonitePath)FrooxEngine.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+	</ItemGroup>
 
-    <!-- Lean mod DLL -->
-    <Optimize>true</Optimize>
-    <Deterministic>true</Deterministic>
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
-  </PropertyGroup>
-
-  <!-- Defaults (override with -p:ResonitePath= and -p:ManagedDir= on the CLI) -->
-  <PropertyGroup>
-    <ResonitePath Condition="'$(ResonitePath)' == ''">
-      C:\Program Files (x86)\Steam\steamapps\common\Resonite
-    </ResonitePath>
-    <ManagedDir Condition="'$(ManagedDir)' == ''">
-      $(ResonitePath)\Renderer\Renderite.Renderer_Data\Managed
-    </ManagedDir>
-  </PropertyGroup>
-
-  <!-- Game/engine references -->
-  <ItemGroup>
-    <Reference Include="FrooxEngine">
-      <HintPath>$(ResonitePath)\FrooxEngine.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Elements.Core">
-      <HintPath>$(ResonitePath)\Elements.Core.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="ResoniteModLoader">
-      <HintPath>$(ResonitePath)\Libraries\ResoniteModLoader.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-
-    <!-- Harmony from the game install (prefer rml_libs, else Libraries).
-         Each Reference is INCLUDED ONLY IF the file actually exists. -->
-    <Reference Include="0Harmony"
-               Condition="Exists('$(ResonitePath)\rml_libs\0Harmony.dll')">
-      <HintPath>$(ResonitePath)\rml_libs\0Harmony.dll</HintPath>
-      <Private>false</Private>
-      <SpecificVersion>false</SpecificVersion>
-    </Reference>
-    <Reference Include="0Harmony"
-               Condition="!Exists('$(ResonitePath)\rml_libs\0Harmony.dll') and Exists('$(ResonitePath)\Libraries\0Harmony.dll')">
-      <HintPath>$(ResonitePath)\Libraries\0Harmony.dll</HintPath>
-      <Private>false</Private>
-      <SpecificVersion>false</SpecificVersion>
-    </Reference>
-
-    <!-- Required after renderer split -->
-    <Reference Include="Renderite.Shared">
-      <HintPath>$(ManagedDir)\Renderite.Shared.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-  </ItemGroup>
-
-  <!-- Fail fast with clear errors if refs are missing -->
-  <Target Name="CheckGameRefs" BeforeTargets="Build">
-    <Error Condition="!Exists('$(ResonitePath)\FrooxEngine.dll')"
-           Text="Missing reference: $(ResonitePath)\FrooxEngine.dll" />
-    <Error Condition="!Exists('$(ResonitePath)\Elements.Core.dll')"
-           Text="Missing reference: $(ResonitePath)\Elements.Core.dll" />
-    <Error Condition="!Exists('$(ResonitePath)\Libraries\ResoniteModLoader.dll')"
-           Text="Missing reference: $(ResonitePath)\Libraries\ResoniteModLoader.dll" />
-    <Error Condition="!Exists('$(ManagedDir)\Renderite.Shared.dll')"
-           Text="Missing reference: $(ManagedDir)\Renderite.Shared.dll (check -p:ManagedDir=...)" />
-    <Error Condition="!Exists('$(ResonitePath)\rml_libs\0Harmony.dll') and !Exists('$(ResonitePath)\Libraries\0Harmony.dll')"
-           Text="Missing Harmony: expected at $(ResonitePath)\rml_libs\0Harmony.dll (or Libraries\0Harmony.dll). Check -p:ResonitePath=..." />
-  </Target>
-
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(CopyToMods)'=='true'">
+		<Message Text="Attempting to copy $(TargetFileName) to $(ResonitePath)rml_mods" Importance="high" />
+		<Copy SourceFiles="$(TargetDir)$(TargetFileName)" DestinationFolder="$(ResonitePath)rml_mods" ContinueOnError="true" />
+	</Target>
 </Project>
